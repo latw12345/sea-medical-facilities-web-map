@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Seattle Medical Facilities</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 2;
+            background: #fff;
+            padding: 12px 16px;
+            border: 1px solid rgba(0, 0, 0, 0.4);
+            border-radius: 3px;
+            max-width: 360px;
+        }
+
+        #title {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #111;
+            margin: 0 0 6px 0;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        #subtitle {
+            font-size: 10pt;
+            color: #111;
+            margin: 0;
+            line-height: 1.3;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #menu {
+            background: #fff;
+            position: absolute;
+            z-index: 1;
+            top: 10px;
+            right: 10px;
+            border-radius: 3px;
+            width: 140px;
+            border: 1px solid rgba(0, 0, 0, 0.4);
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        #menu a {
+            font-size: 13px;
+            color: #404040;
+            display: block;
+            margin: 0;
+            padding: 10px;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+            text-align: center;
+        }
+
+        #menu a:last-child {
+            border: none;
+        }
+
+        #menu a:hover {
+            background-color: #f8f8f8;
+        }
+
+        #menu a.active {
+            background-color: #3887be;
+            color: #ffffff;
+        }
+
+        #menu a.active:hover {
+            background: #3074a4;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav id="menu"></nav>
+<div id="map"></div>
+<div id="map-info">
+    <div id="title">Seattle Medical Facilities</div>
+    <div id="subtitle">Shows the location of medical facilities in the Greater Seattle Area (hospitals, medical centers, and related healthcare locations), with each represented by a red cross symbol.</div>
+</div>
+
+<script>
+mapboxgl.accessToken =
+    'pk.eyJ1IjoibGlhbnM3NyIsImEiOiJjbWt6NGxhMjcwZTJsM2Vwd2RtbWVvZHRuIn0.HDVAEM1yBC3D51XX3B4NPw';
+
+const basemapBounds = [
+    [-123.0, 47.25],
+    [-121.5, 47.825]
+];
+
+const minZoom = 10;
+const maxZoom = 12.25;
+
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/dark-v10',
+    center: [-122.25, 47.5125],
+    zoom: 10,
+    minZoom: minZoom,
+    maxZoom: maxZoom,
+    maxBounds: basemapBounds,
+    maxBoundsViscosity: 1.0
+});
+
+const scale = new mapboxgl.ScaleControl({
+    maxWidth: 200,
+    unit: 'imperial'
+});
+map.addControl(scale, 'bottom-left');
+
+map.on('load', () => {
+
+    map.addSource('basemap-tiles', {
+        type: 'raster',
+        tiles: ['assets/tileset_1/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        minzoom: minZoom-1,
+        maxzoom: maxZoom+1,
+        bounds: [
+            basemapBounds[0][0],
+            basemapBounds[0][1],
+            basemapBounds[1][0],
+            basemapBounds[1][1]
+        ],
+        attribution: 'Tiles designed by Li-An Song'
+    });
+
+    map.addSource('thematic-tiles', {
+        type: 'raster',
+        tiles: ['assets/tileset_2/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        minzoom: minZoom-1,
+        maxzoom: maxZoom+1,
+        bounds: [
+            basemapBounds[0][0],
+            basemapBounds[0][1],
+            basemapBounds[1][0],
+            basemapBounds[1][1]
+        ],
+        attribution: 'Tiles designed by Li-An Song'
+    });
+
+    map.addSource('combined-tiles', {
+        type: 'raster',
+        tiles: ['assets/tileset_3/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        minzoom: minZoom-1,
+        maxzoom: maxZoom+1,
+        bounds: [
+            basemapBounds[0][0],
+            basemapBounds[0][1],
+            basemapBounds[1][0],
+            basemapBounds[1][1]
+        ],
+        attribution: 'Tiles designed by Li-An Song'
+    });
+
+    map.addSource('med-theme-tiles', {
+        type: 'raster',
+        tiles: ['assets/tileset_4/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        minzoom: minZoom-1,
+        maxzoom: maxZoom+1,
+        bounds: [
+            basemapBounds[0][0],
+            basemapBounds[0][1],
+            basemapBounds[1][0],
+            basemapBounds[1][1]
+        ],
+        attribution: 'Tiles designed by Li-An Song'
+    });
+
+    map.addLayer({
+        id: 'basemap',
+        type: 'raster',
+        source: 'basemap-tiles',
+        minzoom: minZoom-1,
+        maxzoom: maxZoom+1,
+        layout: { visibility: 'none' }
+    });
+
+    map.addLayer({
+        id: 'thematic',
+        type: 'raster',
+        source: 'thematic-tiles',
+        minzoom: minZoom-1,
+        maxzoom: maxZoom+1,
+        layout: { visibility: 'none' }
+    });
+
+    map.addLayer({
+        id: 'combined',
+        type: 'raster',
+        source: 'combined-tiles',
+        minzoom: minZoom-1,
+        maxzoom: maxZoom+1,
+        layout: { visibility: 'none' }
+    });
+
+    map.addLayer({
+        id: 'medical-theme',
+        type: 'raster',
+        source: 'med-theme-tiles',
+        minzoom: minZoom-1,
+        maxzoom: maxZoom+1,
+        layout: { visibility: 'none' }
+    });
+
+    const toggleableLayerIds = ['basemap', 'thematic', 'combined', 'medical-theme'];
+
+    for (const id of toggleableLayerIds) {
+        const link = document.createElement('a');
+        link.id = id;
+        link.href = '#';
+        link.textContent = id;
+
+        link.onclick = function (e) {
+            e.preventDefault();
+
+            const currentVisibility = map.getLayoutProperty(id, 'visibility');
+
+            if (currentVisibility === 'visible') {
+                map.setLayoutProperty(id, 'visibility', 'none');
+                this.className = '';
+            } else {
+                map.setLayoutProperty(id, 'visibility', 'visible');
+                this.className = 'active';
+            }
+        };
+
+        document.getElementById('menu').appendChild(link);
+    }
+
+    scale.setUnit('imperial');
+});
+</script>
+
+</body>
+</html>
